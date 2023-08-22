@@ -1,0 +1,68 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www/
+    networks:
+      - laravel
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "8888:80"
+    volumes:
+      - ./:/var/www/
+      - ./nginx/:/etc/nginx/conf.d/
+    networks:
+      - laravel
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./storage:/data
+    environment:
+      MINIO_ROOT_USER: thanhvu
+      MINIO_ROOT_PASSWORD: zucoder2002
+    command: server --console-address ":9001" /data
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - laravel
+
+  db:
+    image: mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=zucoder2002
+      - MYSQL_DATABASE=laravel
+      - MYSQL_USER=
+      - MYSQL_PASSWORD=zucoder2002
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - laravel
+
+volumes:
+  storage: {}
+  mysql-data:
+
+networks:
+  laravel:
+    driver: bridge
